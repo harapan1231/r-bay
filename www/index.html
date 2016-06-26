@@ -1,0 +1,227 @@
+<!doctype html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="R-Bay (Rose Bay) is your sales assistance. ">
+  <title>R-Bay - Sales Points</title>
+  <link rel="icon" href="favicon.png" sizes="32x32">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mithril/0.2.5/mithril.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>
+</head>
+<body class="yellow lighten-1">
+  <div id="content" class="container" style="background-image: url('rosebay.png'); background-repeat: no-repeat;"></div>
+  <style>
+  .col.title {
+    text-align: right;
+  }
+  .larger {
+    font-size: larger;
+  }
+  .appeal-dlg {
+    z-index: 1000;
+    position: fixed;
+    top: 15%;
+    left: 10%;
+    max-height: 80%;
+    width: 80%;
+    margin: auto;
+    overflow-y: auto;
+    border-radius: 2px;
+    opacity: 0.95;
+  }
+  </style>
+  <script>
+  var rbay = {};
+
+  rbay.addDate = function(date, days) {
+    var ret = new Date(date);
+    ret.setDate(ret.getDate() + days);
+    return ret;
+  };
+  rbay.getWeekDate = function(date, day) {
+    return rbay.addDate(date, day - date.getDay() + 1);
+  };
+  rbay.formatDate = function (date, format) {
+    var ret = format ? format : "YYYY-MM-DD hh:mm:ss.SSS";
+    ret = ret.replace(/YYYY/g, date.getFullYear());
+    ret = ret.replace(/MM/g, ("0" + (date.getMonth() + 1)).slice(-2));
+    ret = ret.replace(/DD/g, ("0" + date.getDate()).slice(-2));
+    ret = ret.replace(/hh/g, ("0" + date.getHours()).slice(-2));
+    ret = ret.replace(/mm/g, ("0" + date.getMinutes()).slice(-2));
+    ret = ret.replace(/ss/g, ("0" + date.getSeconds()).slice(-2));
+    if (ret.match(/S/g)) {
+      var milliSeconds = ("00" + date.getMilliseconds()).slice(-3);
+      var length = ret.match(/S/g).length;
+      for (var i = 0; i < length; i++) {
+        ret = ret.replace(/S/, milliSeconds.substring(i, i + 1));
+      }
+    }
+    return ret;
+  };
+
+  var content = {};
+
+  content.uid = "member1"
+  content.time = ["09:00", "10:30", "13:00", "14:30", "16:00"];
+  content.view_type = ["all", "a-team", "member1", "member2", "b-team", "member3", "member4"];
+  content.ctx = function() {
+    $(".dropdown-button").dropdown({
+      inDuration: 300,
+      outDuration: 225,
+      constrain_width: true, 
+      hover: false, 
+      gutter: 0, 
+      belowOrigin: true, 
+      alignment: "left"
+    });
+  };
+
+  content.vm = (function() {
+    var vm = {};
+    vm.init = function() {
+      vm.view_type = m.route.param("view_type") || "all";
+      vm.is_member = vm.view_type.match(/^member/) != null;
+      vm.today = m.route.param("date") ? new Date(m.route.param("year") + "/" + m.route.param("month") + "/" + m.route.param("date")) : new Date();
+      vm.start_date = rbay.getWeekDate(vm.today, 0); 
+      vm.week = [];
+      for (var i = 0; i < 5; i++) {
+        vm.week.push(rbay.getWeekDate(vm.today, i));
+      }
+      vm.state = [];
+      content.time.map(function(t, i) {
+        var s = {};
+        s.time = t;
+        s.checked = [];
+        vm.week.map(function(date, i) {
+          s.checked.push(0.5 < Math.random() ? "checked" : "");
+        });
+        vm.state.push(s);
+      });
+      vm.is_owner = content.vm.view_type == content.uid;
+      vm.is_appeal_open = false;
+      vm.appealBtnOnClick = function() {
+        vm.is_appeal_open = !vm.is_appeal_open;
+      };
+      vm.prevBtnOnClick = function() {
+        m.route("/" + rbay.formatDate(rbay.addDate(vm.today, -7), "YYYY/MM/DD/") + vm.view_type + "/");
+      };
+      vm.nextBtnOnClick = function() {
+        m.route("/" + rbay.formatDate(rbay.addDate(vm.today, 7), "YYYY/MM/DD/") + vm.view_type + "/");
+      };
+      vm.stateBtnOnClick = function() {
+        this.text = this.text == "x" ? "o": "x";
+      };
+    };
+    return vm;
+  }());
+
+  content.controller = function() {
+    content.vm.init();
+  };
+
+  content.view = function() {
+    var row = [];
+    row.push(
+      m("div", {class: "row"}, [
+        m("span", {class: "right"}, [
+          "Signed-in As ",
+          m("span", {class: "larger cyan-text text-darken-3"}, content.uid), 
+        ])
+      ])
+    );
+    row.push(
+      m("div", {class: "row"}, [
+        m("div", {class: "col s2 title"}, "View Type"),
+        m("div", {class: "col s2 center larger"}, content.vm.view_type),
+        m("div", {class: "col s4 offset-s2 offset-m1"}, [
+          m("a", {class: "dropdown-button btn", href: "#", "data-activates": "view_type_list"}, "選択"),
+          m("ul", {id: "view_type_list", class: "dropdown-content"}, content.view_type.map(function(view_type, i) {
+            return m("li", 
+              m("a", {onclick: function() {
+                m.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + view_type + "/");
+              }}, view_type)
+            );
+          })),
+        ]),
+        content.vm.is_member ? m("a", {class: "col s1 offset-s1 btn grey darken-3", onclick: content.vm.appealBtnOnClick}, "#") : null, 
+      ])
+    );
+    row.push(
+      m("div", {class: "row"}, [
+        m("div", {class: "col s2 title"}, "Month"),
+        m("div", {class: "col s2 center larger"}, content.vm.today.getFullYear() + "/" + (content.vm.start_date.getMonth() + 1)),
+        m("a", {class: "col s2 offset-s1 btn brown", onclick: content.vm.prevBtnOnClick}, "前へ"),
+        m("a", {class: "col s2 offset-s1 btn brown", onclick: content.vm.nextBtnOnClick}, "次へ"),
+      ])
+    );
+    row.push(
+      m("div", {class: "row"}, [
+        m("div", {class: "col s2 title"}, "Date"),
+        content.vm.week.map(function(date, i) {
+          var sysdate = new Date();
+          var date_class = "col s2 center";
+          if (date.getFullYear() == sysdate.getFullYear() && date.getMonth() == sysdate.getMonth() && date.getDate() == sysdate.getDate()) {
+            date_class += " larger"; 
+          }
+          return m("div", {class: date_class}, date.getDate())
+        })
+      ])
+    );
+    row.push(
+      m("div", {class: "row"}, [
+        m("div", {class: "col s2 title"}, "Day"),
+        content.vm.week.map(function(date, i) {
+          return m("div", {class: "col s2 center"}, "日月火水木金土"[date.getDay()])
+        }),
+      ])
+    );
+    row.push(
+      content.vm.state.map(function(s, i) {
+        return m("div", {class: "row"}, [
+          m("div", {class: "col s2 title"}, s.time),
+          
+          s.checked.map(function(checked, j) {
+            var id = "checked_" + s.time + "_" + j
+            return m("div", {class: "col s2 center"}, [ 
+              m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: content.vm.is_owner ? "" : "disabled"}),
+              m("label", {for: id, style: "padding-left: 18px;"}),
+            ]);
+          }),
+        ]);
+      })
+    );
+    if (content.vm.is_member && content.vm.is_appeal_open) {
+      row.push(
+        m("div", {class: "appeal-dlg grey lighten-3"}, [
+          m("div", {class: "container"}, [
+            m("h5", {class: "center"}, content.vm.view_type + "'s Appeal"),
+            m("div", {class: "row"}, [
+              m("div", {class: "title"}, "コメント"),
+              m("input", {class: "input-field", disabled: content.vm.is_owner ? "" : "disabled"}),
+            ]),
+            m("div", {class: "row"}, [
+              m("div", {class: "title"}, "業種経験"),
+              m("input", {class: "input-field", disabled: content.vm.is_owner ? "" : "disabled"}),
+            ]),
+            m("div", {class: "row"}, [
+              m("div", {class: "title"}, "スキル経験"),
+              m("input", {class: "input-field", disabled: content.vm.is_owner ? "" : "disabled"}),
+            ]),
+            m("div", {class: "row right"}, [
+              m("a", {class: "btn grey darken-3", onclick: content.vm.appealBtnOnClick}, "閉じる"),
+            ]),
+          ]),
+        ])
+      );
+    }
+    return m("div", {config: content.ctx}, row);
+  };
+  
+  m.route(document.getElementById("content"), "/", {
+    "/": {controller: content.controller, view: content.view},
+    "/:year/:month/:date/:view_type": {controller: content.controller, view: content.view},
+  });
+  </script>
+</body>
