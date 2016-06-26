@@ -107,6 +107,9 @@
       vm.prevBtnOnClick = function() {
         m.route("/" + rbay.formatDate(rbay.addDate(vm.today, -7), "YYYY/MM/DD/") + vm.view_type + "/");
       };
+      vm.todayBtnOnClick = function() {
+        m.route("/" + rbay.formatDate(new Date(), "YYYY/MM/DD/") + vm.view_type + "/");
+      };
       vm.nextBtnOnClick = function() {
         m.route("/" + rbay.formatDate(rbay.addDate(vm.today, 7), "YYYY/MM/DD/") + vm.view_type + "/");
       };
@@ -133,10 +136,8 @@
     );
     row.push(
       m("div", {class: "row"}, [
-        m("div", {class: "col s2 title"}, "View Type"),
-        m("div", {class: "col s2 center larger"}, content.vm.view_type),
-        m("div", {class: "col s4 offset-s2 offset-m1"}, [
-          m("a", {class: "dropdown-button btn", href: "#", "data-activates": "view_type_list"}, "選択"),
+        m("div", {class: "col s4 offset-s1 offset-m1"}, [
+          m("a", {class: "dropdown-button btn blue", href: "#", "data-activates": "view_type_list"}, "選択"),
           m("ul", {id: "view_type_list", class: "dropdown-content"}, content.view_type.map(function(view_type, i) {
             return m("li", 
               m("a", {onclick: function() {
@@ -145,15 +146,21 @@
             );
           })),
         ]),
+        m("div", {class: "col s4 center larger"}, content.vm.view_type),
         content.vm.is_member ? m("a", {class: "col s1 offset-s1 btn grey darken-3", onclick: content.vm.appealBtnOnClick}, "#") : null, 
+      ])
+    );
+    row.push(
+      m("div", {class: "row"}, [
+        m("a", {class: "col s3 offset-s1 btn brown", onclick: content.vm.prevBtnOnClick}, "前へ"),
+        m("a", {class: "col s2 offset-s1 btn brown", onclick: content.vm.todayBtnOnClick}, "今日"),
+        m("a", {class: "col s3 offset-s1 btn brown", onclick: content.vm.nextBtnOnClick}, "次へ"),
       ])
     );
     row.push(
       m("div", {class: "row"}, [
         m("div", {class: "col s2 title"}, "Month"),
         m("div", {class: "col s2 center larger"}, content.vm.today.getFullYear() + "/" + (content.vm.start_date.getMonth() + 1)),
-        m("a", {class: "col s2 offset-s1 btn brown", onclick: content.vm.prevBtnOnClick}, "前へ"),
-        m("a", {class: "col s2 offset-s1 btn brown", onclick: content.vm.nextBtnOnClick}, "次へ"),
       ])
     );
     row.push(
