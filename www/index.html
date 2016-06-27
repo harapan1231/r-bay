@@ -9,9 +9,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mithril/0.2.5/mithril.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>
-</head>
-<body class="yellow lighten-1">
-  <div id="content" class="container" style="background-image: url('rosebay.png'); background-repeat: no-repeat;"></div>
   <style>
   .col.title {
     text-align: right;
@@ -32,6 +29,8 @@
     opacity: 0.95;
   }
   </style>
+</head>
+<body>
   <script>
   var rbay = {};
 
@@ -60,12 +59,46 @@
     }
     return ret;
   };
+  rbay.addClass = function(el, class_text) {
+    if (el.classList) {
+      class_text.split(" ").map(function(text, i) {
+        if (!text.trim()) return;
+        el.classList.add(text);
+      });
+    } else {
+      el.className += " " + content.vm.color_class;
+    }
+  };
+  rbay.removeClass = function(el, class_text) {
+    if (el.classList) {
+      class_text.split(" ").map(function(text, i) {
+        if (!text.trim()) return;
+        el.classList.remove(text);
+      });
+    } else {
+      el.className = el.className.replace(new RegExp("(^|\\b)" + className.split(" ").join("|") + "(\\b|$)", "gi"), " ");
+    }
+  };
 
   var content = {};
 
   content.uid = "member1"
   content.time = ["09:00", "10:30", "13:00", "14:30", "16:00"];
-  content.view_type = ["all", "a-team", "member1", "member2", "b-team", "member3", "member4"];
+  content.member = [
+    {team: "a-team", uid: "member1", name: "M1"},
+    {team: "a-team", uid: "member2", name: "M2"},
+    {team: "b-team", uid: "member3", name: "M3"},
+    {team: "b-team", uid: "member4", name: "M4"},
+  ];
+  content.view_type = ["all"];
+  var _team;
+  content.member.map(function(member, i) {
+    if (member.team != _team) {
+      content.view_type.push(member.team);
+      _team = member.team;
+    }
+    content.view_type.push(member.uid);
+  });
   content.ctx = function() {
     $(".dropdown-button").dropdown({
       inDuration: 300,
@@ -83,6 +116,15 @@
     vm.init = function() {
       vm.view_type = m.route.param("view_type") || "all";
       vm.is_member = vm.view_type.match(/^member/) != null;
+      var member_color = "yellow lighten-3";
+      var group_color = "blue lighten-5";
+      if (vm.is_member) {
+        rbay.removeClass(document.body, group_color);
+        rbay.addClass(document.body, member_color);
+      } else {
+        rbay.removeClass(document.body, member_color);
+        rbay.addClass(document.body, group_color);
+      }
       vm.today = m.route.param("date") ? new Date(m.route.param("year") + "/" + m.route.param("month") + "/" + m.route.param("date")) : new Date();
       vm.start_date = rbay.getWeekDate(vm.today, 0); 
       vm.week = [];
@@ -90,28 +132,52 @@
         vm.week.push(rbay.getWeekDate(vm.today, i));
       }
       vm.state = [];
-      content.time.map(function(t, i) {
-        var s = {};
-        s.time = t;
-        s.checked = [];
-        vm.week.map(function(date, i) {
-          s.checked.push(0.5 < Math.random() ? "checked" : "");
+      if (vm.is_member) {
+        content.time.map(function(t, i) {
+          var s = {};
+          s.time = t;
+          s.checked = [];
+          vm.week.map(function(date, i) {
+            s.checked.push(0.5 < Math.random() ? "checked" : "");
+          });
+          vm.state.push(s);
         });
-        vm.state.push(s);
-      });
+      } else {
+        content.member.map(function(member, i) {
+          var s = {};
+          s.uid = member.uid;
+          s.checked = [];
+          content.time.map(function(time, i) {
+            s.checked.push(0.5 < Math.random() ? "checked" : "");
+          });
+          vm.state.push(s);
+        });
+      }
       vm.is_owner = content.vm.view_type == content.uid;
       vm.is_appeal_open = false;
       vm.appealBtnOnClick = function() {
         vm.is_appeal_open = !vm.is_appeal_open;
       };
       vm.prevBtnOnClick = function() {
-        m.route("/" + rbay.formatDate(rbay.addDate(vm.today, -7), "YYYY/MM/DD/") + vm.view_type + "/");
+        var diff_date;
+        if (vm.is_member) {
+          diff_date = 7;
+        } else {
+          diff_date = vm.today.getDay() == 1 ? 3 : 1;
+        }
+        m.route("/" + rbay.formatDate(rbay.addDate(vm.today, -1 * diff_date), "YYYY/MM/DD/") + vm.view_type + "/");
       };
       vm.todayBtnOnClick = function() {
         m.route("/" + rbay.formatDate(new Date(), "YYYY/MM/DD/") + vm.view_type + "/");
       };
       vm.nextBtnOnClick = function() {
-        m.route("/" + rbay.formatDate(rbay.addDate(vm.today, 7), "YYYY/MM/DD/") + vm.view_type + "/");
+        var diff_date;
+        if (vm.is_member) {
+          diff_date = 7;
+        } else {
+          diff_date = vm.today.getDay() == 5 ? 3 : 1;
+        }
+        m.route("/" + rbay.formatDate(rbay.addDate(vm.today, diff_date), "YYYY/MM/DD/") + vm.view_type + "/");
       };
       vm.stateBtnOnClick = function() {
         this.text = this.text == "x" ? "o": "x";
@@ -130,7 +196,7 @@
       m("div", {class: "row"}, [
         m("span", {class: "right"}, [
           "Signed-in As ",
-          m("span", {class: "larger cyan-text text-darken-3"}, content.uid), 
+          m("span", {class: "larger blue-text text-darken-2"}, content.uid), 
         ])
       ])
     );
@@ -157,51 +223,82 @@
         m("a", {class: "col s3 offset-s1 btn brown", onclick: content.vm.nextBtnOnClick}, "次へ"),
       ])
     );
-    row.push(
-      m("div", {class: "row"}, [
-        m("div", {class: "col s2 title"}, "Month"),
-        m("div", {class: "col s2 center larger"}, content.vm.today.getFullYear() + "/" + (content.vm.start_date.getMonth() + 1)),
-      ])
-    );
-    row.push(
-      m("div", {class: "row"}, [
-        m("div", {class: "col s2 title"}, "Date"),
-        content.vm.week.map(function(date, i) {
-          var sysdate = new Date();
-          var date_class = "col s2 center";
-          if (date.getFullYear() == sysdate.getFullYear() && date.getMonth() == sysdate.getMonth() && date.getDate() == sysdate.getDate()) {
-            date_class += " larger"; 
-          }
-          return m("div", {class: date_class}, date.getDate())
-        })
-      ])
-    );
-    row.push(
-      m("div", {class: "row"}, [
-        m("div", {class: "col s2 title"}, "Day"),
-        content.vm.week.map(function(date, i) {
-          return m("div", {class: "col s2 center"}, "日月火水木金土"[date.getDay()])
-        }),
-      ])
-    );
-    row.push(
-      content.vm.state.map(function(s, i) {
-        return m("div", {class: "row"}, [
-          m("div", {class: "col s2 title"}, s.time),
-          
-          s.checked.map(function(checked, j) {
-            var id = "checked_" + s.time + "_" + j
-            return m("div", {class: "col s2 center"}, [ 
-              m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: content.vm.is_owner ? "" : "disabled"}),
-              m("label", {for: id, style: "padding-left: 18px;"}),
-            ]);
+    if (content.vm.is_member) {
+      row.push(
+        m("div", {class: "row"}, [
+          m("div", {class: "col s2 title"}, "Month"),
+          m("div", {class: "col s3 center larger"}, rbay.formatDate(content.vm.today, "YYYY/MM")),
+        ])
+      );
+      row.push(
+        m("div", {class: "row"}, [
+          m("div", {class: "col s2 title"}, "Date"),
+          content.vm.week.map(function(date, i) {
+            var sysdate = new Date();
+            var date_class = "col s2 center larger";
+            if (date.getFullYear() == sysdate.getFullYear() && date.getMonth() == sysdate.getMonth() && date.getDate() == sysdate.getDate()) {
+              date_class += " blue-text text-darken-2"; 
+            }
+            return m("div", {class: date_class}, date.getDate())
+          })
+        ])
+      );
+      row.push(
+        m("div", {class: "row"}, [
+          m("div", {class: "col s2 title"}, "Day"),
+          content.vm.week.map(function(date, i) {
+            return m("div", {class: "col s2 center"}, "日月火水木金土"[date.getDay()])
           }),
-        ]);
-      })
-    );
+        ])
+      );
+      row.push(
+        content.vm.state.map(function(s, i) {
+          return m("div", {class: "row"}, [
+            m("div", {class: "col s2 title"}, s.time),
+            s.checked.map(function(checked, j) {
+              var id = "checked_" + s.time + "_" + j
+              return m("div", {class: "col s2 center"}, [ 
+                m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: content.vm.is_owner ? "" : "disabled"}),
+                m("label", {for: id, style: "padding-left: 18px;"}),
+              ]);
+            }),
+          ]);
+        })
+      );
+    } else {
+      row.push(
+        m("div", {class: "row"}, [
+          m("div", {class: "col s2 title"}, "Date"),
+          m("div", {class: "col s5 larger"}, rbay.formatDate(content.vm.today, "YYYY/MM/DD (" + "日月火水木金土"[content.vm.today.getDay()] + ")")),
+        ])
+      );
+      row.push(
+        m("div", {class: "row"}, [
+          m("div", {class: "col s2 title"}, "Time"),
+          content.time.map(function(time, i) {
+            return m("div", {class: "col s2 center"}, time);                            
+          }),
+        ])
+      );
+      row.push(
+        content.vm.state.map(function(s, i) {
+          if (content.vm.view_type != "all" && content.vm.view_type != content.member.find(function(member) {return member.uid == s.uid}).team) return;
+          return m("div", {class: "row"}, [
+            m("div", {class: "col s2 title"}, s.uid),
+            s.checked.map(function(checked, j) {
+              var id = "checked_" + s.uid + "_" + j
+              return m("div", {class: "col s2 center"}, [ 
+                m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: s.uid == content.uid ? "" : "disabled"}),
+                m("label", {for: id, style: "padding-left: 18px;"}),
+              ]);
+            }),
+          ]);
+        })
+      );
+    }
     if (content.vm.is_member && content.vm.is_appeal_open) {
       row.push(
-        m("div", {class: "appeal-dlg grey lighten-3"}, [
+        m("div", {class: "appeal-dlg grey lighten-2"}, [
           m("div", {class: "container"}, [
             m("h5", {class: "center"}, content.vm.view_type + "'s Appeal"),
             m("div", {class: "row"}, [
@@ -223,10 +320,10 @@
         ])
       );
     }
-    return m("div", {config: content.ctx}, row);
+    return m("div", {class: "container", style: "background-image: url('rosebay.png'); background-repeat: no-repeat;", config: content.ctx}, row);
   };
   
-  m.route(document.getElementById("content"), "/", {
+  m.route(document.body, "/", {
     "/": {controller: content.controller, view: content.view},
     "/:year/:month/:date/:view_type": {controller: content.controller, view: content.view},
   });
