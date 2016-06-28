@@ -14,6 +14,9 @@
   .larger {
     font-size: larger;
   }
+  .bold {
+    font-weight: bold;
+  }
   .appeal-dlg {
     z-index: 1000;
     position: fixed;
@@ -241,9 +244,13 @@
           if (s.date.getDate() == 1 && s.date.getDay() != 1) {
             ret.push(m("div", {class: "row"}, [m("div", {class: "col s2 center"}, rbay.formatDate(s.date, "YYYY/\nMM")),]));
           }
+          var c = "col s2 title";
+          if (rbay.formatDate(s.date, "YYYYMMDD") ==  rbay.formatDate(new Date(), "YYYYMMDD")) {
+            c += " bold";
+          }
           ret.push(
             m("div", {class: "row"}, [
-              m("a", {class: "col s2 title", onclick: function() {m.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/");}}, s.date.getDate() + "\n" + "日月火水木金土"[s.date.getDay()]),
+              m("a", {class: c, onclick: function() {m.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/");}}, s.date.getDate() + "\n" + "日月火水木金土"[s.date.getDay()]),
               s.checked.map(function(checked, j) {
                 var id = "checked_" + s.uid + "_" + j
                 return m("div", {class: "col s2 center"}, [ 
@@ -257,10 +264,14 @@
         })
       );
     } else {
+      var c = "col s5 larger";
+      if (rbay.formatDate(content.vm.today, "YYYYMMDD") ==  rbay.formatDate(new Date(), "YYYYMMDD")) {
+        c += " bold";
+      }
       row.push(
         m("div", {class: "row"}, [
           m("div", {class: "col s2 title"}, "Date"),
-          m("div", {class: "col s5 larger"}, rbay.formatDate(content.vm.today, "YYYY/MM/DD (" + "日月火水木金土"[content.vm.today.getDay()] + ")")),
+          m("div", {class: c}, rbay.formatDate(content.vm.today, "YYYY/MM/DD (" + "日月火水木金土"[content.vm.today.getDay()] + ")")),
         ])
       );
       row.push(
