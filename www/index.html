@@ -7,8 +7,6 @@
   <link rel="icon" href="favicon.png" sizes="32x32">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mithril/0.2.5/mithril.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>
   <style>
   .col.title {
     text-align: right;
@@ -27,6 +25,9 @@
     overflow-y: auto;
     border-radius: 2px;
     opacity: 0.95;
+  }
+  select {
+    display: inline;
   }
   </style>
 </head>
@@ -101,23 +102,15 @@
     }
     content.view_type.push(member.uid);
   });
-  content.ctx = function() {
-    $(".dropdown-button").dropdown({
-      inDuration: 300,
-      outDuration: 225,
-      constrain_width: true, 
-      hover: false, 
-      gutter: 0, 
-      belowOrigin: true, 
-      alignment: "left"
-    });
+  content.is_member = function(str) {
+    return str.match(/^member/) != null;
   };
 
   content.vm = (function() {
     var vm = {};
     vm.init = function() {
       vm.view_type = m.route.param("view_type") || "all";
-      vm.is_member = vm.view_type.match(/^member/) != null;
+      vm.is_member = content.is_member(vm.view_type);
       var member_color = "yellow lighten-3";
       var group_color = "blue lighten-5";
       if (vm.is_member) {
@@ -157,6 +150,11 @@
       }
       vm.is_owner = content.vm.view_type == content.uid;
       vm.is_appeal_open = false;
+      vm.view_type_onchange = function(e) {
+          var selected = e.target[e.target.selectedIndex].text;
+          if (selected == vm.view_type) return;
+          m.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + selected + "/");
+      };
       vm.appealBtnOnClick = function() {
         vm.is_appeal_open = !vm.is_appeal_open;
       };
@@ -205,17 +203,18 @@
     row.push(
       m("div", {class: "row"}, [
         m("div", {class: "col s4 offset-s1 offset-m1"}, [
-          m("a", {class: "dropdown-button btn blue darken-1", href: "#", "data-activates": "view_type_list"}, "選択"),
-          m("ul", {id: "view_type_list", class: "dropdown-content"}, content.view_type.map(function(view_type, i) {
-            return m("li", 
-              m("a", {onclick: function() {
-                m.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + view_type + "/");
-              }}, view_type)
-            );
-          })),
+          m("select", {class: "larger", onchange: content.vm.view_type_onchange}, [
+            m("option"),
+            content.view_type.map(function(view_type, i) {
+              if (content.is_member(view_type)) return;
+              return m("option", {selected: view_type == content.vm.view_type ? "selected" : null}, view_type);
+            })
+          ]),
         ]),
-        m("div", {class: "col s4 center larger"}, content.vm.view_type),
-        content.vm.is_member ? m("a", {class: "col s1 offset-s1 btn grey darken-3", onclick: content.vm.appealBtnOnClick}, "#") : null, 
+        content.vm.is_member ? [
+          m("div", {class: "col s4 center larger"}, content.vm.view_type),
+          m("a", {class: "col s1 offset-s1 btn grey darken-3", onclick: content.vm.appealBtnOnClick}, "#"),
+        ] : null, 
       ])
     );
     row.push(
@@ -286,7 +285,7 @@
         content.vm.state.map(function(s, i) {
           if (content.vm.view_type != "all" && content.vm.view_type != content.member.find(function(member) {return member.uid == s.uid}).team) return;
           return m("div", {class: "row"}, [
-            m("div", {class: "col s2 title"}, s.uid),
+            m("a", {class: "col s2 title", onclick: function() {m.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + s.uid + "/");}}, s.uid),
             s.checked.map(function(checked, j) {
               var id = "checked_" + s.uid + "_" + j
               return m("div", {class: "col s2 center"}, [ 
@@ -322,7 +321,7 @@
         ])
       );
     }
-    return m("div", {class: "container", style: "background-image: url('rosebay.png'); background-repeat: no-repeat;", config: content.ctx}, row);
+    return m("div", {class: "container", style: "background-image: url('rosebay.png'); background-repeat: no-repeat;"}, row);
   };
   
   m.route(document.body, "/", {
