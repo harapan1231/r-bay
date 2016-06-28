@@ -155,15 +155,6 @@
           if (selected == vm.view_type) {
             return;
           }
-          if (!selected) {
-            Array.forEach(e.target.children, function(el, i) {
-              if (el.value == vm.view_type) {
-                e.target.selectedIndex = el.index;
-                return;
-              }
-            });
-            return;
-          }
           m.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + selected + "/");
       };
       vm.appealBtnOnClick = function() {
@@ -215,10 +206,10 @@
       m("div", {class: "row"}, [
         m("div", {class: "col s4 offset-s1 offset-m1"}, [
           m("select", {class: "larger", onchange: content.vm.view_type_onchange}, [
-            m("option"),
             content.view_type.map(function(view_type, i) {
               if (content.is_member(view_type)) return;
-              return m("option", {selected: view_type == content.vm.view_type ? "selected" : null}, view_type);
+          var selected = view_type == content.vm.view_type || (content.is_member(content.vm.view_type) && view_type == content.member.find(function(p, i) {return p.uid == content.vm.view_type;}).team);
+              return m("option", {selected: selected ? "selected" : null}, view_type);
             })
           ]),
         ]),
@@ -252,7 +243,7 @@
           }
           ret.push(
             m("div", {class: "row"}, [
-              m("div", {class: "col s2 title"}, s.date.getDate() + "\n" + "日月火水木金土"[s.date.getDay()]),
+              m("a", {class: "col s2 title", onclick: function() {m.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/");}}, s.date.getDate() + "\n" + "日月火水木金土"[s.date.getDay()]),
               s.checked.map(function(checked, j) {
                 var id = "checked_" + s.uid + "_" + j
                 return m("div", {class: "col s2 center"}, [ 
