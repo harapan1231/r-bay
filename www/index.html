@@ -250,7 +250,7 @@
           }
           ret.push(
             m("div", {class: "row"}, [
-              m("a", {class: c, onclick: function() {m.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/");}}, s.date.getDate() + "\n" + "日月火水木金土"[s.date.getDay()]),
+              m("a", {class: c, onclick: function() {m.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/");}}, ("0" + s.date.getDate()).slice(-2) + " " + "日月火水木金土"[s.date.getDay()]),
               s.checked.map(function(checked, j) {
                 var id = "checked_" + s.uid + "_" + j
                 return m("div", {class: "col s2 center"}, [ 
