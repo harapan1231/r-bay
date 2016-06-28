@@ -285,8 +285,12 @@
       row.push(
         content.vm.state.map(function(s, i) {
           if (content.vm.view_type != "all" && content.vm.view_type != content.member.find(function(member) {return member.uid == s.uid}).team) return;
+          var c = "col s2 title";
+          if (s.uid == content.uid) {
+            c += " bold";
+          }
           return m("div", {class: "row"}, [
-            m("a", {class: "col s2 title", onclick: function() {m.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + s.uid + "/");}}, s.uid),
+            m("a", {class: c, onclick: function() {m.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + s.uid + "/");}}, s.uid),
             s.checked.map(function(checked, j) {
               var id = "checked_" + s.uid + "_" + j
               return m("div", {class: "col s2 center"}, [ 
