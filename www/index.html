@@ -252,9 +252,9 @@
             m("div", {class: "row"}, [
               m("a", {class: c, onclick: function() {m.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/");}}, ("0" + s.date.getDate()).slice(-2) + " " + "日月火水木金土"[s.date.getDay()]),
               s.checked.map(function(checked, j) {
-                var id = "checked_" + s.uid + "_" + j
+                var id = "checked_" + s.date.getDate() + "_" + j
                 return m("div", {class: "col s2 center"}, [ 
-                  m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: s.uid == content.uid ? "" : "disabled"}),
+                  m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: content.vm.view_type == content.uid ? "" : "disabled"}),
                   m("label", {for: id, style: "padding-left: 18px;"}),
                 ]);
               }),
