@@ -128,11 +128,11 @@
       }
       vm.state = [];
       if (vm.is_member) {
-        content.time.map(function(t, i) {
+        content.vm.week.map(function(date, i) {
           var s = {};
-          s.time = t;
+          s.date = date;
           s.checked = [];
-          vm.week.map(function(date, i) {
+          content.time.map(function(time, i) {
             s.checked.push(0.5 < Math.random() ? "checked" : "");
           });
           vm.state.push(s);
@@ -151,8 +151,19 @@
       vm.is_owner = content.vm.view_type == content.uid;
       vm.is_appeal_open = false;
       vm.view_type_onchange = function(e) {
-          var selected = e.target[e.target.selectedIndex].text;
-          if (selected == vm.view_type) return;
+          var selected = e.target[e.target.selectedIndex].value;
+          if (selected == vm.view_type) {
+            return;
+          }
+          if (!selected) {
+            Array.forEach(e.target.children, function(el, i) {
+              if (el.value == vm.view_type) {
+                e.target.selectedIndex = el.index;
+                return;
+              }
+            });
+            return;
+          }
           m.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + selected + "/");
       };
       vm.appealBtnOnClick = function() {
@@ -227,43 +238,31 @@
     if (content.vm.is_member) {
       row.push(
         m("div", {class: "row"}, [
-          m("div", {class: "col s2 title"}, "Month"),
-          m("div", {class: "col s3 center larger"}, rbay.formatDate(content.vm.today, "YYYY/MM")),
-        ])
-      );
-      row.push(
-        m("div", {class: "row"}, [
-          m("div", {class: "col s2 title"}, "Date"),
-          content.vm.week.map(function(date, i) {
-            var sysdate = new Date();
-            var date_class = "col s2 center larger";
-            if (date.getFullYear() == sysdate.getFullYear() && date.getMonth() == sysdate.getMonth() && date.getDate() == sysdate.getDate()) {
-              date_class += " blue-text text-darken-2"; 
-            }
-            return m("div", {class: date_class}, date.getDate())
-          })
-        ])
-      );
-      row.push(
-        m("div", {class: "row"}, [
-          m("div", {class: "col s2 title"}, "Day"),
-          content.vm.week.map(function(date, i) {
-            return m("div", {class: "col s2 center"}, "日月火水木金土"[date.getDay()])
+          m("div", {class: "col s2 center"}, rbay.formatDate(content.vm.start_date, "YYYY/\nMM")),
+          content.time.map(function(time, i) {
+            return m("div", {class: "col s2 center"}, time);
           }),
         ])
       );
       row.push(
         content.vm.state.map(function(s, i) {
-          return m("div", {class: "row"}, [
-            m("div", {class: "col s2 title"}, s.time),
-            s.checked.map(function(checked, j) {
-              var id = "checked_" + s.time + "_" + j
-              return m("div", {class: "col s2 center"}, [ 
-                m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: content.vm.is_owner ? "" : "disabled"}),
-                m("label", {for: id, style: "padding-left: 18px;"}),
-              ]);
-            }),
-          ]);
+          var ret = [];
+          if (s.date.getDate() == 1 && s.date.getDay() != 1) {
+            ret.push(m("div", {class: "row"}, [m("div", {class: "col s2 center"}, rbay.formatDate(s.date, "YYYY/\nMM")),]));
+          }
+          ret.push(
+            m("div", {class: "row"}, [
+              m("div", {class: "col s2 title"}, s.date.getDate() + "\n" + "日月火水木金土"[s.date.getDay()]),
+              s.checked.map(function(checked, j) {
+                var id = "checked_" + s.uid + "_" + j
+                return m("div", {class: "col s2 center"}, [ 
+                  m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: s.uid == content.uid ? "" : "disabled"}),
+                  m("label", {for: id, style: "padding-left: 18px;"}),
+                ]);
+              }),
+            ])
+          );
+          return ret;
         })
       );
     } else {
