@@ -1,5 +1,2 @@
 *.swp
-server/bin
-server/include
-server/lib
-server/pip-selfcheck.json
+server/__hidden__
