@@ -17,6 +17,10 @@
   .bold {
     font-weight: bold;
   }
+  .grow {
+    transform: scale(1.5);
+    transition: transform 1500ms;
+  }
   .appeal-dlg {
     z-index: 1000;
     position: fixed;
@@ -154,8 +158,16 @@
       vm.is_owner = content.vm.view_type == content.uid;
       vm.is_appeal_open = false;
 
-      vm.route = function(uri) {
-        m.route(uri);
+      vm.route = function(uri, el) {
+        if (el) {
+          m.redraw.strategy("none");
+          rbay.addClass(el, "grow");
+          setTimeout(function() {
+          m.route(uri);
+        }, 1500);
+        } else {
+          m.route(uri);
+        }
       };
       vm.view_type_onchange = function(e) {
           var selected = e.target[e.target.selectedIndex].value;
@@ -256,7 +268,7 @@
           }
           ret.push(
             m("div", {class: "row"}, [
-              m("a", {class: c, onclick: function() {content.vm.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/");}}, ("0" + s.date.getDate()).slice(-2) + " " + "日月火水木金土"[s.date.getDay()]),
+              m("a", {class: c, onclick: function() {content.vm.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/", this);}}, ("0" + s.date.getDate()).slice(-2) + " " + "日月火水木金土"[s.date.getDay()]),
               s.checked.map(function(checked, j) {
                 var id = "checked_" + s.date.getDate() + "_" + j
                 return m("div", {class: "col s2 center"}, [ 
@@ -296,7 +308,7 @@
             c += " bold";
           }
           return m("div", {class: "row"}, [
-            m("a", {class: c, onclick: function() {content.vm.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + s.uid + "/");}}, s.uid),
+            m("a", {class: c, onclick: function() {content.vm.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + s.uid + "/", this);}}, s.uid),
             s.checked.map(function(checked, j) {
               var id = "checked_" + s.uid + "_" + j
               return m("div", {class: "col s2 center"}, [ 
