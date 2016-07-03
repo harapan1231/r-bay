@@ -90,17 +90,19 @@
 
   var content = {};
 
-  content.uid = "member1"
-  content.time = ["09:00", "10:30", "13:00", "14:30", "16:00"];
-  content.member = [
-    {team: "a-team", uid: "member1", name: "M1"},
-    {team: "a-team", uid: "member2", name: "M2"},
-    {team: "a-team", uid: "member3", name: "M3"},
-    {team: "a-team", uid: "member4", name: "M4"},
-    {team: "b-team", uid: "member5", name: "M5"},
-    {team: "b-team", uid: "member6", name: "M6"},
-  ];
+  content.member = [];
   content.view_type = ["all"];
+  m.request({method: "POST", url: "/api/get-user"}).then(function(value) {
+    value.map(function(v, i) {
+      content.member.push({team: v.TeamId, uid: v.UserId, name: v.UserName});
+      if (v.TeamId.trim() && content.view_type.indexOf(v.TeamId) == -1) {
+        content.view_type.push(v.TeamId);
+      }
+    });
+  });
+
+  content.uid = "test-001"
+  content.time = ["09:00", "10:30", "13:00", "14:30", "16:00"];
   var _team;
   content.member.map(function(member, i) {
     if (member.team != _team) {
@@ -110,7 +112,7 @@
     content.view_type.push(member.uid);
   });
   content.is_member = function(str) {
-    return str.match(/^member/) != null;
+    return str.match(/^test-/) != null;
   };
 
   content.vm = (function() {
@@ -229,7 +231,7 @@
           m("select", {class: "larger", onchange: content.vm.view_type_onchange}, [
             content.view_type.map(function(view_type, i) {
               if (content.is_member(view_type)) return;
-          var selected = view_type == content.vm.view_type || (content.is_member(content.vm.view_type) && view_type == content.member.find(function(p, i) {return p.uid == content.vm.view_type;}).team);
+              var selected = view_type == content.vm.view_type || (content.is_member(content.vm.view_type) && view_type == content.member.find(function(p, i) {return p.uid == content.vm.view_type;}).team);
               return m("option", {selected: selected ? "selected" : null}, view_type);
             })
           ]),

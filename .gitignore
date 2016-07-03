@@ -1,2 +1,4 @@
 *.swp
-server/__hidden__
+server/pkg/*
+server/src/*
+!server/src/r-bay
