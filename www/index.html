@@ -48,7 +48,7 @@
     return ret;
   };
   rbay.getWeekDate = function(date, day) {
-    return rbay.addDate(date, day - date.getDay() + 1);
+    return rbay.addDate(date, day - date.getDay());
   };
   rbay.formatDate = function (date, format) {
     var ret = format ? format : "YYYY-MM-DD hh:mm:ss.SSS";
@@ -102,7 +102,7 @@
   });
 
   content.uid = "test-001"
-  content.time = ["09:00", "10:30", "13:00", "14:30", "16:00"];
+  content.time = ["0900", "1030", "1300", "1430", "1600"];
   var _team;
   content.member.map(function(member, i) {
     if (member.team != _team) {
@@ -113,6 +113,16 @@
   });
   content.is_member = function(str) {
     return str.match(/^test-/) != null;
+  };
+  content.is_disabled = function(uid) {
+    return uid == content.uid ? "" : "disabled";
+  };
+  content.stateOnChange = function(state, uid, date, time) {
+    var url = "/api/put-user-state/" + uid + "/" + rbay.formatDate(date, "YYYYMMDD") + "/" + time + "/" + (state ? "1" : "0");
+    m.request({method: "POST", url: url}).then(function(value) {
+      //TODO error handle
+      console.log(value);
+    });
   };
 
   content.vm = (function() {
@@ -129,10 +139,10 @@
         rbay.removeClass(document.body, member_color);
         rbay.addClass(document.body, group_color);
       }
-      vm.today = m.route.param("date") ? new Date(m.route.param("year") + "/" + m.route.param("month") + "/" + m.route.param("date")) : new Date();
-      vm.start_date = rbay.getWeekDate(vm.today, 0); 
+      vm.today = m.route.param("date") ? new Date(m.route.param("year") + "-" + m.route.param("month") + "-" + m.route.param("date")) : new Date();
+      vm.start_date = rbay.getWeekDate(vm.today, 1); 
       vm.week = [];
-      for (var i = 0; i < 5; i++) {
+      for (var i = 1; i < 6; i++) {
         vm.week.push(rbay.getWeekDate(vm.today, i));
       }
       vm.state = [];
@@ -142,7 +152,7 @@
           s.date = date;
           s.checked = [];
           content.time.map(function(time, i) {
-            s.checked.push(0.5 < Math.random() ? "checked" : "");
+            s.checked.push(m.prop(false));
           });
           vm.state.push(s);
         });
@@ -152,7 +162,7 @@
           s.uid = member.uid;
           s.checked = [];
           content.time.map(function(time, i) {
-            s.checked.push(0.5 < Math.random() ? "checked" : "");
+            s.checked.push(m.prop(false));
           });
           vm.state.push(s);
         });
@@ -254,7 +264,7 @@
         m("div", {class: "row"}, [
           m("div", {class: "col s2 center"}, rbay.formatDate(content.vm.start_date, "YYYY/\nMM")),
           content.time.map(function(time, i) {
-            return m("div", {class: "col s2 center"}, time);
+            return m("div", {class: "col s2 center"}, time.slice(0, 2) + ":" + time.slice(-2));
           }),
         ])
       );
@@ -273,8 +283,12 @@
               m("a", {class: c, onclick: function() {content.vm.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/", this);}}, ("0" + s.date.getDate()).slice(-2) + " " + "日月火水木金土"[s.date.getDay()]),
               s.checked.map(function(checked, j) {
                 var id = "checked_" + s.date.getDate() + "_" + j
+                var onchange = function() {
+                  checked(this.checked);
+                  content.stateOnChange(checked(), content.vm.view_type, rbay.getWeekDate(content.vm.today, s.date.getDay()), content.time[j]);
+                };
                 return m("div", {class: "col s2 center"}, [ 
-                  m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: content.vm.view_type == content.uid ? "" : "disabled"}),
+                  m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked(), disabled: content.is_disabled(content.vm.view_type), onchange: m.withAttr("value", onchange)}),
                   m("label", {for: id, style: "padding-left: 18px;"}),
                 ]);
               }),
@@ -298,7 +312,7 @@
         m("div", {class: "row"}, [
           m("div", {class: "col s2 title"}, "Time"),
           content.time.map(function(time, i) {
-            return m("div", {class: "col s2 center"}, time);                            
+            return m("div", {class: "col s2 center"}, time.slice(0, 2) + ":" + time.slice(-2));                            
           }),
         ])
       );
@@ -313,8 +327,12 @@
             m("a", {class: c, onclick: function() {content.vm.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + s.uid + "/", this);}}, s.uid),
             s.checked.map(function(checked, j) {
               var id = "checked_" + s.uid + "_" + j
+              var onchange = function() {
+                checked(this.checked);
+                content.stateOnChange(checked(), s.uid, content.vm.today, content.time[j]);
+              };
               return m("div", {class: "col s2 center"}, [ 
-                m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked, disabled: s.uid == content.uid ? "" : "disabled"}),
+                m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked(), disabled: content.is_disabled(s.uid), onchange: m.withAttr("value", onchange)}),
                 m("label", {for: id, style: "padding-left: 18px;"}),
               ]);
             }),
