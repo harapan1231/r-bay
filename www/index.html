@@ -92,7 +92,7 @@
 
   content.member = [];
   content.view_type = ["all"];
-  m.request({method: "POST", url: "/api/get-user"}).then(function(value) {
+  m.request({method: "GET", url: "/api/get-user"}).then(function(value) {
     value.map(function(v, i) {
       content.member.push({team: v.TeamId, uid: v.UserId, name: v.UserName});
       if (v.TeamId.trim() && content.view_type.indexOf(v.TeamId) == -1) {
@@ -112,7 +112,7 @@
     content.view_type.push(member.uid);
   });
   content.is_member = function(str) {
-    return str.match(/^test-/) != null;
+    return str && str.match(/^test-/) != null; //TODO
   };
   content.is_disabled = function(uid) {
     return uid == content.uid ? "" : "disabled";
@@ -125,22 +125,33 @@
     });
   };
 
+  //TODO
+  var member_color = "yellow lighten-3";
+  var group_color = "blue lighten-5";
+
   content.vm = (function() {
     var vm = {};
     vm.init = function() {
       vm.view_type = m.route.param("view_type") || "all";
       vm.is_member = content.is_member(vm.view_type);
-      var member_color = "yellow lighten-3";
-      var group_color = "blue lighten-5";
+      vm.today = m.route.param("date") ? new Date(m.route.param("year") + "-" + m.route.param("month") + "-" + m.route.param("date")) : new Date();
+      vm.start_date = rbay.getWeekDate(vm.today, 1); 
+      //TODO supress every time ajax request
       if (vm.is_member) {
+        m.request({method: "GET", url: "/api/get-user-state/" + vm.view_type + "/" + rbay.formatDate(vm.start_date, "YYYYMMDD") + "/" + rbay.formatDate(rbay.getWeekDate(vm.start_date, 5), "YYYYMMDD")}).then(function(value) {
+          console.log(value); //TODO
+        });
+
         rbay.removeClass(document.body, group_color);
         rbay.addClass(document.body, member_color);
       } else {
+        m.request({method: "GET", url: "/api/get-date-state/" + rbay.formatDate(vm.today, "YYYYMMDD") + "/" + vm.view_type}).then(function(value) {
+          console.log(value); //TODO
+        });
+
         rbay.removeClass(document.body, member_color);
         rbay.addClass(document.body, group_color);
       }
-      vm.today = m.route.param("date") ? new Date(m.route.param("year") + "-" + m.route.param("month") + "-" + m.route.param("date")) : new Date();
-      vm.start_date = rbay.getWeekDate(vm.today, 1); 
       vm.week = [];
       for (var i = 1; i < 6; i++) {
         vm.week.push(rbay.getWeekDate(vm.today, i));
