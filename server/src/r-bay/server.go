@@ -70,7 +70,7 @@ func putUserState(ctx context.Context, res http.ResponseWriter, req *http.Reques
 	state := pat.Param(ctx, "state")
 
 	db, err := sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d sslmode=disable", DbUser, DbPwd, DbUser, DbHost, DbPort))
-  defer db.Close()
+	defer db.Close()
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -94,13 +94,13 @@ func putUserState(ctx context.Context, res http.ResponseWriter, req *http.Reques
 		log.Fatal(err)
 		return
 	}
-  //TODO return response code
+	//TODO return response code
 }
 
 func main() {
 	mux := goji.NewMux()
 	mux.HandleFuncC(pat.Post("/api/get-user"), getUser)
-  mux.HandleFuncC(pat.Post("/api/put-user-state/:uid/:date/:time/:state"), putUserState)
+	mux.HandleFuncC(pat.Post("/api/put-user-state/:uid/:date/:time/:state"), putUserState)
 
 	http.ListenAndServe(fmt.Sprintf("%s:%d", ServerHost, ServerPort), mux)
 }
