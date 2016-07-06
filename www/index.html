@@ -88,6 +88,11 @@
     }
   };
 
+  //TODO
+  var member_color = "yellow lighten-3";
+  var group_color = "blue lighten-5";
+  var home_color = "white";
+
   var content = {};
 
   content.member = [];
@@ -101,7 +106,7 @@
     });
   });
 
-  content.uid = "test-001"
+  content.uid = "";
   content.time = ["0900", "1030", "1300", "1430", "1600"];
   var _team;
   content.member.map(function(member, i) {
@@ -125,14 +130,20 @@
     m.request({method: "POST", url: url}).then(function(value) {
     });
   };
-
-  //TODO
-  var member_color = "yellow lighten-3";
-  var group_color = "blue lighten-5";
+  content.signOutBtnOnClick = function() {
+    content.uid = "";
+    m.route("/");
+  };
 
   content.vm = (function() {
     var vm = {};
     vm.init = function() {
+      //TODO check session
+      if (!content.uid) {
+        m.route("/");
+      }
+
+      //TODO change view owing to view_type
       if (!m.route.param("view_type")) {
         m.route(rbay.formatDate(new Date(), "/YYYY/MM/DD/all"));
       }
@@ -179,7 +190,7 @@
               return v.Time in s.checked && rbay.formatDate(s.date, "YYYYMMDD") == v.Date;
             });
             if (state) {
-              state.checked[v.Time](v.State);
+              state.checked[v.Time](v.State == "1" ? true : false);
             }
           });
         });
@@ -193,7 +204,7 @@
               return s.uid == v.UserId && v.Time in s.checked;
             });
             if (state) {
-              state.checked[v.Time](v.State);
+              state.checked[v.Time](v.State == "1" ? true : false);
             }
           });
         });
@@ -264,10 +275,11 @@
     var row = [];
     row.push(
       m("div", {class: "row"}, [
-        m("span", {class: "right"}, [
+        m("span", {class: "col s8 m10 title"}, [
           "Signed-in As ",
           m("span", {class: "larger blue-text text-darken-2"}, content.uid), 
-        ])
+        ]),
+        m("a", {class: "col s4 m2 btn", onclick: content.signOutBtnOnClick}, "Sign out"),
       ])
     );
     row.push(
@@ -401,10 +413,57 @@
     }
     return m("div", {class: "container", style: "background-image: url('rosebay.png'); background-repeat: no-repeat;"}, row);
   };
+
+  var home = {};
+
+  home.signInBtnOnClick = function() {
+    //TODO check session
+    if (home.vm.uid() == home.vm.pwd()) {
+      content.uid = home.vm.uid();
+      m.route(rbay.formatDate(new Date(), "/YYYY/MM/DD/") + home.vm.uid());
+    }
+  };
+
+  home.vm = (function() {
+    var vm = {};
+    vm.init = function() {
+      rbay.addClass(document.body, home_color);
+      //TODO this is dummy id
+      vm.uid = m.prop("test-001");
+      vm.pwd = m.prop("");
+    };
+    return vm;
+  })();
+  home.controller = function() {
+    home.vm.init();
+  };
+  home.view = function() {
+    var row = [];
+    row.push(
+      m("h3", "R-Bay")
+    );
+    row.push(
+      m("div", {class: "row"}, [
+        m("b", {class: "col offset-s2"}, "Let's share sale schedules"),
+      ])
+    );
+    row.push(
+      m("div", {class: "row"}, [
+        m("input", {class: "col s4 m2 offset-s2 offset-m3", plaheholder: "Your Id", onchange: m.withAttr("value", home.vm.uid), value: home.vm.uid()}),
+        m("input", {type: "password", class: "col s4 m2 offset-s1 offset-m1", placeholder: "Password", onchange: m.withAttr("value", home.vm.pwd), value: home.vm.pwd()}),
+      ])
+    );
+    row.push(
+      m("div", {class: "row"}, [
+        m("a", {class: "col offset-s9 btn", onclick: home.signInBtnOnClick}, "Sign in"),
+      ])
+    );
+    return m("div", {class: "container", style: "background-image: url('rosebay.png'); background-repeat: no-repeat;"}, row);
+  };
   
   m.route(document.body, "/", {
-    "/": {controller: content.controller, view: content.view},
-    "/:year/:month/:date/:view_type": {controller: content.controller, view: content.view},
+    "/": home,
+    "/:year/:month/:date/:view_type": content,
   });
   </script>
 </body>
