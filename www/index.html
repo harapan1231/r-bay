@@ -133,10 +133,14 @@
   content.vm = (function() {
     var vm = {};
     vm.init = function() {
-      vm.view_type = m.route.param("view_type") || "all";
+      if (!m.route.param("view_type")) {
+        m.route(rbay.formatDate(new Date(), "/YYYY/MM/DD/all"));
+      }
+
+      vm.view_type = m.route.param("view_type");
       vm.is_member = content.is_member(vm.view_type);
 
-      vm.today = m.route.param("date") ? new Date(m.route.param("year") + "-" + m.route.param("month") + "-" + m.route.param("date")) : new Date();
+      vm.today = new Date(m.route.param("year") + "-" + m.route.param("month") + "-" + m.route.param("date"));
       vm.start_date = rbay.getWeekDate(vm.today, 1); 
       vm.week = [];
       for (var i = 1; i < 6; i++) {
