@@ -44,6 +44,7 @@ func handleError(err error) {
 
 func getUser(ctx context.Context, res http.ResponseWriter, req *http.Request) {
 	db, err := sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d sslmode=disable", DbUser, DbPwd, DbUser, DbHost, DbPort))
+	defer db.Close()
 	if err != nil {
 		handleError(err)
 		return
@@ -81,6 +82,7 @@ func getUserState(ctx context.Context, res http.ResponseWriter, req *http.Reques
 	endDate := pat.Param(ctx, "endDate")
 
 	db, err := sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d sslmode=disable", DbUser, DbPwd, DbUser, DbHost, DbPort))
+	defer db.Close()
 	if err != nil {
 		handleError(err)
 		return
@@ -117,6 +119,7 @@ func getDateState(ctx context.Context, res http.ResponseWriter, req *http.Reques
 	teamId := pat.Param(ctx, "teamId")
 
 	db, err := sql.Open("postgres", fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%d sslmode=disable", DbUser, DbPwd, DbUser, DbHost, DbPort))
+	defer db.Close()
 	if err != nil {
 		handleError(err)
 		return
