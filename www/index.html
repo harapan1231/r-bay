@@ -428,6 +428,8 @@
   home.vm = (function() {
     var vm = {};
     vm.init = function() {
+      rbay.removeClass(document.body, group_color);
+      rbay.removeClass(document.body, member_color);
       rbay.addClass(document.body, home_color);
       //TODO
       content.uid = "";
