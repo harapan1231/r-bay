@@ -418,7 +418,8 @@
 
   home.signInBtnOnClick = function() {
     //TODO check session
-    if (home.vm.uid() == home.vm.pwd()) {
+    var valid_member = content.member.find(function(m, i) { return m.uid == home.vm.uid(); });
+    if (home.vm.uid() == home.vm.pwd() && valid_member) {
       content.uid = home.vm.uid();
       m.route(rbay.formatDate(new Date(), "/YYYY/MM/DD/") + home.vm.uid());
     }
@@ -428,6 +429,8 @@
     var vm = {};
     vm.init = function() {
       rbay.addClass(document.body, home_color);
+      //TODO
+      content.uid = "";
       //TODO this is dummy id
       vm.uid = m.prop("test-001");
       vm.pwd = m.prop("");
