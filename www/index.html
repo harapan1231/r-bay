@@ -422,6 +422,9 @@
     if (home.vm.uid() == home.vm.pwd() && valid_member) {
       content.uid = home.vm.uid();
       m.route(rbay.formatDate(new Date(), "/YYYY/MM/DD/") + home.vm.uid());
+    } else {
+      //TODO
+      alert("Wrong user id or password!");
     }
   };
 
