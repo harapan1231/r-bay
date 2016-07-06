@@ -175,7 +175,7 @@ func putUserState(ctx context.Context, res http.ResponseWriter, req *http.Reques
 
 	var query string
 	if rows.Next() {
-		query = "UPDATE t_user_state state = $4 WHERE user_id = $1 AND date = $2 AND time = $3"
+		query = "UPDATE t_user_state SET state = $4 WHERE user_id = $1 AND date = $2 AND time = $3"
 	} else {
 		query = "INSERT INTO t_user_state (user_id, date, time, state) VALUES ($1, $2, $3, $4)"
 	}

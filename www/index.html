@@ -112,16 +112,17 @@
     content.view_type.push(member.uid);
   });
   content.is_member = function(str) {
-    return str && str.match(/^test-/) != null; //TODO
+    return content.member.find(function(m, i) {
+      return str == m.uid;
+    });
   };
   content.is_disabled = function(uid) {
     return uid == content.uid ? "" : "disabled";
   };
   content.stateOnChange = function(state, uid, date, time) {
     var url = "/api/put-user-state/" + uid + "/" + rbay.formatDate(date, "YYYYMMDD") + "/" + time + "/" + (state ? "1" : "0");
+    //TODO error handle
     m.request({method: "POST", url: url}).then(function(value) {
-      //TODO error handle
-      console.log(value);
     });
   };
 
@@ -134,36 +135,22 @@
     vm.init = function() {
       vm.view_type = m.route.param("view_type") || "all";
       vm.is_member = content.is_member(vm.view_type);
+
       vm.today = m.route.param("date") ? new Date(m.route.param("year") + "-" + m.route.param("month") + "-" + m.route.param("date")) : new Date();
       vm.start_date = rbay.getWeekDate(vm.today, 1); 
-      //TODO supress every time ajax request
-      if (vm.is_member) {
-        m.request({method: "GET", url: "/api/get-user-state/" + vm.view_type + "/" + rbay.formatDate(vm.start_date, "YYYYMMDD") + "/" + rbay.formatDate(rbay.getWeekDate(vm.start_date, 5), "YYYYMMDD")}).then(function(value) {
-          console.log(value); //TODO
-        });
-
-        rbay.removeClass(document.body, group_color);
-        rbay.addClass(document.body, member_color);
-      } else {
-        m.request({method: "GET", url: "/api/get-date-state/" + rbay.formatDate(vm.today, "YYYYMMDD") + "/" + vm.view_type}).then(function(value) {
-          console.log(value); //TODO
-        });
-
-        rbay.removeClass(document.body, member_color);
-        rbay.addClass(document.body, group_color);
-      }
       vm.week = [];
       for (var i = 1; i < 6; i++) {
         vm.week.push(rbay.getWeekDate(vm.today, i));
       }
+
       vm.state = [];
       if (vm.is_member) {
         content.vm.week.map(function(date, i) {
           var s = {};
           s.date = date;
-          s.checked = [];
+          s.checked = {};
           content.time.map(function(time, i) {
-            s.checked.push(m.prop(false));
+            s.checked[time] = m.prop(false);
           });
           vm.state.push(s);
         });
@@ -171,13 +158,46 @@
         content.member.map(function(member, i) {
           var s = {};
           s.uid = member.uid;
-          s.checked = [];
+          s.checked = {};
           content.time.map(function(time, i) {
-            s.checked.push(m.prop(false));
+            s.checked[time] = m.prop(false);
           });
           vm.state.push(s);
         });
       }
+      //TODO supress every time ajax request
+      if (vm.is_member) {
+        var start_date = rbay.formatDate(vm.start_date, "YYYYMMDD");
+        var end_date = rbay.formatDate(rbay.getWeekDate(vm.start_date, 5), "YYYYMMDD");
+        m.request({method: "GET", url: "/api/get-user-state/" + vm.view_type + "/" + start_date + "/" + end_date}).then(function(value) {
+          value.map(function(v, i) {
+            var state = vm.state.find(function(s, i) {
+              return v.Time in s.checked && rbay.formatDate(s.date, "YYYYMMDD") == v.Date;
+            });
+            if (state) {
+              state.checked[v.Time](v.State);
+            }
+          });
+        });
+
+        rbay.removeClass(document.body, group_color);
+        rbay.addClass(document.body, member_color);
+      } else {
+        m.request({method: "GET", url: "/api/get-date-state/" + rbay.formatDate(vm.today, "YYYYMMDD") + "/" + vm.view_type}).then(function(value) {
+          value.map(function(v, i) {
+            var state = vm.state.find(function(s, i) {
+              return s.uid == v.UserId && v.Time in s.checked;
+            });
+            if (state) {
+              state.checked[v.Time](v.State);
+            }
+          });
+        });
+
+        rbay.removeClass(document.body, member_color);
+        rbay.addClass(document.body, group_color);
+      }
+
       vm.is_owner = content.vm.view_type == content.uid;
       vm.is_appeal_open = false;
 
@@ -292,14 +312,14 @@
           ret.push(
             m("div", {class: "row"}, [
               m("a", {class: c, onclick: function() {content.vm.route("/" + rbay.formatDate(s.date, "YYYY/MM/DD/") + "all/", this);}}, ("0" + s.date.getDate()).slice(-2) + " " + "日月火水木金土"[s.date.getDay()]),
-              s.checked.map(function(checked, j) {
+              content.time.map(function(time, j) {
                 var id = "checked_" + s.date.getDate() + "_" + j
                 var onchange = function() {
-                  checked(this.checked);
-                  content.stateOnChange(checked(), content.vm.view_type, rbay.getWeekDate(content.vm.today, s.date.getDay()), content.time[j]);
+                  s.checked[time](this.checked);
+                  content.stateOnChange(s.checked[time](), content.vm.view_type, rbay.getWeekDate(content.vm.today, s.date.getDay()), time);
                 };
                 return m("div", {class: "col s2 center"}, [ 
-                  m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked(), disabled: content.is_disabled(content.vm.view_type), onchange: m.withAttr("value", onchange)}),
+                  m("input[type=checkbox]", {id: id, class: "filled-in", checked: s.checked[time](), disabled: content.is_disabled(content.vm.view_type), onchange: m.withAttr("value", onchange)}),
                   m("label", {for: id, style: "padding-left: 18px;"}),
                 ]);
               }),
@@ -336,14 +356,14 @@
           }
           return m("div", {class: "row"}, [
             m("a", {class: c, onclick: function() {content.vm.route("/" + rbay.formatDate(content.vm.today, "YYYY/MM/DD/") + s.uid + "/", this);}}, s.uid),
-            s.checked.map(function(checked, j) {
+            content.time.map(function(time, j) {
               var id = "checked_" + s.uid + "_" + j
               var onchange = function() {
-                checked(this.checked);
-                content.stateOnChange(checked(), s.uid, content.vm.today, content.time[j]);
+                s.checked[time](this.checked);
+                content.stateOnChange(s.checked[time](), s.uid, content.vm.today, time);
               };
               return m("div", {class: "col s2 center"}, [ 
-                m("input[type=checkbox]", {id: id, class: "filled-in", checked: checked(), disabled: content.is_disabled(s.uid), onchange: m.withAttr("value", onchange)}),
+                m("input[type=checkbox]", {id: id, class: "filled-in", checked: s.checked[time](), disabled: content.is_disabled(s.uid), onchange: m.withAttr("value", onchange)}),
                 m("label", {for: id, style: "padding-left: 18px;"}),
               ]);
             }),
